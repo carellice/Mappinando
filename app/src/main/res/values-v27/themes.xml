@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.Mappinando" parent="Base.Theme.Mappinando">
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

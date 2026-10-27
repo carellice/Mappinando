@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Mappinando" parent="Base.Theme.Mappinando">
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowSplashScreenBackground">#F8F7F3</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+    </style>
+</resources>
