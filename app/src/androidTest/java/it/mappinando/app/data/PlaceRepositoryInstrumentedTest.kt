@@ -32,16 +32,30 @@ class PlaceRepositoryInstrumentedTest {
         context.deleteTestPreferences()
     }
 
-    @Test fun createsDemoOnlyOnceAndKeepsAnIntentionallyEmptyCollection() {
-        assertEquals(PlaceCategory.entries.toSet(), repository.places.value.map { it.category }.toSet())
+    @Test fun startsEmptyAndKeepsAnIntentionallyEmptyCollection() {
+        assertTrue(repository.places.value.isEmpty())
         repository.clearAll()
         assertTrue(repository.places.value.isEmpty())
 
         val reopened = PlaceRepository(context)
         assertTrue("Deleted demo places must not reappear", reopened.places.value.isEmpty())
 
-        reopened.resetDemo()
-        assertEquals(DemoPlaces.create(), PlaceRepository(context).places.value)
+        val created = reopened.add(newPlace())
+        assertEquals(listOf(created), PlaceRepository(context).places.value)
+    }
+
+    @Test fun removesOnlyUnmodifiedLegacyExamplesAndRunsMigrationOnce() {
+        // Build a pre-migration payload, including a personalised example and a genuine place.
+        val edited = DemoPlaces.create().first().copy(note = "La mia nota personale", favorite = false)
+        val own = newPlace()
+        DemoPlaces.create().drop(1).forEach(repository::add)
+        repository.add(edited); repository.add(own)
+        val migrated = PlaceRepository(context)
+        assertEquals(listOf(edited, own), migrated.places.value)
+        assertEquals(listOf(edited, own), PlaceRepository(context).places.value)
+        // Matching a legacy entry later must never trigger a second deletion.
+        migrated.add(DemoPlaces.create()[1])
+        assertEquals(3, PlaceRepository(context).places.value.size)
     }
 
     @Test fun createsUpdatesAndDeletesPlacesAcrossRepositoryInstances() {

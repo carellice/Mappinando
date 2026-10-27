@@ -173,7 +173,7 @@ fun NativeMap(
                 controller.updateUiMargins(latestMargins)
                 if (savedMapState.isEmpty) {
                     map.cameraPosition = CameraPosition.Builder()
-                        .target(LatLng(45.4642, 9.19)).zoom(12.8).build()
+                        .target(LatLng(42.5, 12.5)).zoom(5.0).build()
                 }
                 map.addOnCameraIdleListener {
                     map.cameraPosition.target?.let { latestCameraIdle(it.latitude, it.longitude) }

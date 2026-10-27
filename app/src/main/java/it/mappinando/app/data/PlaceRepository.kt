@@ -11,7 +11,7 @@ import org.json.JSONObject
 /**
  * Device-local storage; no account, network connection, or location permission required.
  * Create one instance per application/activity and observe [places] from Compose.
- * The first launch includes example places in Milan. Deleting them remains persistent.
+ * New collections are empty. Legacy examples are removed only when still unmodified.
  */
 class PlaceRepository(context: Context) {
     private val preferences: SharedPreferences = context.applicationContext
@@ -59,8 +59,6 @@ class PlaceRepository(context: Context) {
 
     fun clearAll() = synchronized(lock) { save(emptyList()) }
 
-    fun resetDemo() = synchronized(lock) { save(DemoPlaces.create()) }
-
     private fun change(id: String, transform: (Place) -> Place): Boolean = synchronized(lock) {
         val current = mutablePlaces.value.firstOrNull { it.id == id } ?: return@synchronized false
         val validated = PlaceValidation.normalized(transform(current))
@@ -76,15 +74,13 @@ class PlaceRepository(context: Context) {
 
     private fun load(): List<Place> {
         if (!preferences.contains(PLACES_KEY)) {
-            return DemoPlaces.create().also { demo ->
-                preferences.edit().putString(PLACES_KEY, encode(demo).toString()).apply()
-            }
+            return emptyList()
         }
         val serialized = preferences.getString(PLACES_KEY, null) ?: return emptyList()
         return runCatching {
             val array = JSONArray(serialized)
             val seenIds = mutableSetOf<String>()
-            buildList {
+            val restored = buildList {
                 for (index in 0 until array.length()) {
                     // One malformed record must not discard the user's other saved places.
                     runCatching { decodePlace(array.getJSONObject(index)) }.getOrNull()?.let { place ->
@@ -92,6 +88,13 @@ class PlaceRepository(context: Context) {
                     }
                 }
             }
+            if (!preferences.getBoolean("examples.removed.v1", false)) {
+                val untouched = DemoPlaces.create().toSet()
+                val personal = restored.filterNot { it in untouched }
+                preferences.edit().putString(PLACES_KEY, encode(personal).toString())
+                    .putBoolean("examples.removed.v1", true).apply()
+                personal
+            } else restored
         }.getOrElse {
             // Preserve unreadable data for recovery; never replace it with demo content.
             if (!preferences.contains(CORRUPT_BACKUP_KEY)) {

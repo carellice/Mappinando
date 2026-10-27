@@ -21,6 +21,12 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
+import it.mappinando.app.data.Place
+import it.mappinando.app.data.PlaceCategory
+import it.mappinando.app.data.PlaceTask
+import it.mappinando.app.data.PlaceRepository
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -115,10 +121,32 @@ class MapTransitionInstrumentedTest {
         compose.onNodeWithTag("tab-MAP").assertIsSelected()
     }
 
-    private fun mountApp() {
+    @Test fun scrollingNextPlacesDoesNotChangeMapHeightOrRecreateItsView() {
+        mountApp(seedCards = true)
+        val anchor = anchorBounds()
+        val map = onlyMapView()
+        repeat(4) {
+            compose.onNodeWithTag("next-places").performTouchInput { swipeLeft() }
+            compose.waitForIdle()
+            assertRectClose(anchor, anchorBounds())
+            assertSame(map, onlyMapView())
+        }
+    }
+
+    private fun mountApp(seedCards: Boolean = false) {
         compose.setContent {
             val baseContext = LocalContext.current
-            val isolated = remember(baseContext) { IsolatedPreferencesContext(baseContext) }
+            val isolated = remember(baseContext) { IsolatedPreferencesContext(baseContext).also { isolated ->
+                if (seedCards) {
+                    val repository = PlaceRepository(isolated)
+                    repeat(8) { index -> repository.add(Place(
+                        name = if (index % 2 == 0) "Bar" else "Un ristorante con un nome molto lungo da provare",
+                        category = PlaceCategory.entries[index % PlaceCategory.entries.size],
+                        latitude = 42.0, longitude = 12.0,
+                        tasks = if (index % 2 == 0) emptyList() else List(12) { PlaceTask(title = "Idea $it") },
+                    )) }
+                }
+            } }
             val owner = LocalOnBackPressedDispatcherOwner.current
             val view = LocalView.current
             SideEffect {

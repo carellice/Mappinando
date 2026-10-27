@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Fullscreen
 import androidx.compose.material.icons.outlined.FullscreenExit
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -56,6 +57,7 @@ internal fun MapControls(
     onAdd: () -> Unit,
     modifier: Modifier = Modifier,
     onSearch: (() -> Unit)? = null,
+    locating: Boolean = false,
 ) {
     BoxWithConstraints(modifier.fillMaxSize().testTag("map-controls")) {
         val compactHeight = maxHeight < 240.dp
@@ -105,13 +107,13 @@ internal fun MapControls(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         MapFullscreenControl(fullscreen, !transitioning, onToggleFullscreen)
                         VerticalDivider(Modifier.height(24.dp), color = MapControlLine)
-                        MapRecenterControl(!transitioning, onRecenter)
+                        MapRecenterControl(!transitioning, onRecenter, locating)
                     }
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         MapFullscreenControl(fullscreen, !transitioning, onToggleFullscreen)
                         HorizontalDivider(Modifier.width(24.dp), color = MapControlLine)
-                        MapRecenterControl(!transitioning, onRecenter)
+                        MapRecenterControl(!transitioning, onRecenter, locating)
                     }
                 }
             }
@@ -148,9 +150,15 @@ private fun MapFullscreenControl(fullscreen: Boolean, enabled: Boolean, onClick:
 }
 
 @Composable
-private fun MapRecenterControl(enabled: Boolean, onClick: () -> Unit) {
+private fun MapRecenterControl(enabled: Boolean, onClick: () -> Unit, locating: Boolean) {
+    if (locating) {
+        Box(Modifier.size(48.dp).testTag("map-locating"), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp, color = MapControlGreen)
+        }
+        return
+    }
     MapActionControl(
-        icon = Icons.Outlined.CenterFocusStrong, description = "Centra i luoghi",
+        icon = Icons.Outlined.CenterFocusStrong, description = "Vai alla mia posizione",
         tag = "map-recenter", enabled = enabled, onClick = onClick,
     )
 }

@@ -1,6 +1,11 @@
 # Mappinando 1.0.7
 
-Schermate reali acquisite su Android 15. Sono mostrati i sei luoghi di esempio a Milano.
+Schermate reali acquisite su Android 15. Dalla versione 1.0.9 le nuove raccolte partono vuote; le schermate delle raccolte qui sotto documentano le versioni precedenti con dati dimostrativi.
+
+## Primo avvio · 1.0.9
+
+<img src="mappinando-onboarding.png" width="290" alt="Introduzione animata" />
+<img src="mappinando-empty-map.png" width="290" alt="Mappa vuota, senza tappe preimpostate" />
 
 [Guarda la transizione corretta della mappa, in apertura e chiusura](mappinando-map-fixed.mp4).
 

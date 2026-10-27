@@ -1,7 +1,7 @@
 package it.mappinando.app.data
 
-/** Sample entries for the first launch, removable just like any user-created place. */
-object DemoPlaces {
+/** Legacy migration fingerprints only. These entries are never inserted into a collection. */
+internal object DemoPlaces {
     fun create(): List<Place> = listOf(
         Place(
             id = "demo-pave", name = "Pavé", category = PlaceCategory.BARS,

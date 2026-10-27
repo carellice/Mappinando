@@ -74,7 +74,7 @@ class MapSearchInstrumentedTest {
     }
 
     @Test fun savedResultOnlyPreviewsAndOpensExistingPlaceWithoutDuplicatingIt() {
-        mount(PlaceSearcher { _, _, _ -> throw IOException("Offline") })
+        mount(PlaceSearcher { _, _, _ -> throw IOException("Offline") }, seedSavedPlace = true)
         val saved = compose.runOnIdle { PlaceRepository(storage).places.value.first() }
         val originalCount = compose.runOnIdle { PlaceRepository(storage).places.value.size }
         compose.onNodeWithTag("search-entry").performClick()
@@ -166,10 +166,15 @@ class MapSearchInstrumentedTest {
         }
     }
 
-    private fun mount(searcher: PlaceSearcher) {
+    private fun mount(searcher: PlaceSearcher, seedSavedPlace: Boolean = false) {
         compose.setContent {
             val context = LocalContext.current
-            val isolated = remember(context) { IsolatedContext(context) }
+            val isolated = remember(context) { IsolatedContext(context).also { isolated ->
+                if (seedSavedPlace) PlaceRepository(isolated).add(it.mappinando.app.data.Place(
+                    name = "Il mio ristorante salvato", category = PlaceCategory.RESTAURANTS,
+                    latitude = restaurant.latitude, longitude = restaurant.longitude, city = "Milano",
+                ))
+            } }
             val view = LocalView.current
             SideEffect { storage = isolated; root = view.rootView }
             CompositionLocalProvider(LocalContext provides isolated) { MappinandoTheme { MappinandoApp(searcher) } }

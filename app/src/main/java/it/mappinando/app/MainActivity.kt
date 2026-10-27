@@ -6,7 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.ViewModelProvider
 import it.mappinando.app.updates.AppUpdateViewModel
-import it.mappinando.app.ui.MappinandoApp
+import it.mappinando.app.ui.AppExperience
+import it.mappinando.app.map.AppLocationViewModel
 import it.mappinando.app.ui.MappinandoTheme
 
 class MainActivity : ComponentActivity() {
@@ -14,6 +15,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val updates = ViewModelProvider(this)[AppUpdateViewModel::class.java]
-        setContent { MappinandoTheme { MappinandoApp(updateManager = updates) } }
+        val location = ViewModelProvider(this)[AppLocationViewModel::class.java]
+        setContent { MappinandoTheme { AppExperience(updates, location) } }
     }
 }

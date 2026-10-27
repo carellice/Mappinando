@@ -39,8 +39,12 @@ Verde bosco, crema, accenti lime, icone illustrate e animazioni curate accompagn
 - **Le cose da fare:** ogni luogo può avere note e una checklist. La sezione Da fare riunisce tutte le attività.
 - **Verifica su Google Maps:** dall’anteprima apri l’indirizzo selezionato per controllarlo meglio, prima di salvarlo.
 - **Aggiornamenti dall’app:** controlla le release GitHub, scarica l’APK e installa la nuova versione con la conferma di Android.
+- **Un inizio tutto tuo:** introduzione animata al primo avvio e una raccolta vuota, pronta per i tuoi posti.
+- **Vicino a te, se vuoi:** il mirino centra la mappa sulla posizione attuale, con consenso Android e supporto alla posizione approssimativa.
 
-Al primo avvio trovi sei luoghi di esempio a Milano. Puoi modificarli o eliminarli: non ricompariranno dopo la cancellazione.
+Al primo avvio scegli se usare la posizione o iniziare senza. Nessun luogo viene aggiunto automaticamente. Aggiornando da una versione precedente, vengono rimossi solo i vecchi esempi ancora identici: le tappe personali e gli esempi modificati restano salvati.
+
+<p align="center"><img src="docs/mappinando-onboarding.png" width="290" alt="Introduzione animata al primo avvio: segui la tua curiosità" /></p>
 
 ## Installa Mappinando
 
@@ -60,13 +64,13 @@ L’app controlla anche la disponibilità di nuove release all’avvio, al massi
 
 ## I tuoi dati restano tuoi
 
-Luoghi, note, preferiti e attività vengono salvati **localmente sul dispositivo** e restano consultabili offline. Non servono un account o l’accesso alla posizione. Questa versione non sincronizza i dati: disinstallare l’app elimina la raccolta locale.
+Luoghi, note, preferiti e attività vengono salvati **localmente sul dispositivo** e restano consultabili offline. Non serve un account e la posizione è facoltativa: viene richiesta solo dopo un gesto esplicito, per centrare la mappa. Il rilevamento si interrompe appena trova una posizione, dopo 20 secondi oppure quando l’app passa in background. Non viene conservata una cronologia degli spostamenti. Questa versione non sincronizza i dati: disinstallare l’app elimina la raccolta locale.
 
 La mappa richiede Internet e usa **OpenFreeMap**, con dati **OpenStreetMap / OpenMapTiles**. La ricerca combina **Photon**, ospitato da komoot, e il servizio indirizzi **Android Geocoder**, se disponibile. Non servono chiavi API o servizi a pagamento.
 
 La copertura dei locali dipende dai dati disponibili. Le corrispondenze parziali sono distinte dai risultati pertinenti; gli indirizzi non accompagnati da una scheda del locale vengono mostrati come **Indirizzi da verificare**. Con **Non lo trovi? Aggiungilo per indirizzo** puoi cercare l’indirizzo e indicare tu il nome da salvare. Nessuna tappa viene creata automaticamente.
 
-Le ricerche online partono solo quando premi Cerca. Photon riceve testo, filtro e centro approssimativo della mappa; il servizio Android riceve il testo cercato. Per gli aggiornamenti viene contattata la repository pubblica GitHub. **Verifica su Google Maps** apre un normale collegamento esterno nell’app Maps o nel browser.
+Le ricerche online partono solo quando premi Cerca. Photon riceve testo, filtro e centro della mappa, che può corrispondere alla posizione scelta; il servizio Android riceve il testo cercato. Per gli aggiornamenti viene contattata la repository pubblica GitHub. **Verifica su Google Maps** apre un normale collegamento esterno nell’app Maps o nel browser.
 
 ## Sviluppo
 

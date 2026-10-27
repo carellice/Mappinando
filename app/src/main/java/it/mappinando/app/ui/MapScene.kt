@@ -60,6 +60,7 @@ internal fun MapScene(
     onSavePreview: () -> Unit,
     onClosePreview: () -> Unit,
     onCameraIdle: (Double, Double) -> Unit,
+    locating: Boolean = false,
 ) {
     val density = LocalDensity.current
     val direction = LocalLayoutDirection.current
@@ -107,6 +108,7 @@ internal fun MapScene(
         }
         if (!transitioning) {
             MapControls(
+                locating = locating,
                 placeCount = places.size, fullscreen = fullscreen, transitioning = false,
                 onToggleFullscreen = onToggleFullscreen, onRecenter = onRecenter, onAdd = onAdd,
                 onSearch = onSearch,

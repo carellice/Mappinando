@@ -89,6 +89,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import it.mappinando.app.R
 import it.mappinando.app.data.*
 import it.mappinando.app.map.MapFocus
+import it.mappinando.app.map.LocationState
 import it.mappinando.app.map.PlaceSearch
 import it.mappinando.app.map.SearchResult
 import it.mappinando.app.map.PlaceSearcher
@@ -156,7 +157,11 @@ internal enum class Tab(val label: String, val icon: ImageVector) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun MappinandoApp(searchProvider: PlaceSearcher? = null, updateManager: AppUpdateViewModel? = null) {
+fun MappinandoApp(
+    searchProvider: PlaceSearcher? = null, updateManager: AppUpdateViewModel? = null,
+    locationState: LocationState = LocationState(), onLocate: (() -> Unit)? = null,
+    onLocationMessageConsumed: () -> Unit = {},
+) {
     val context = LocalContext.current
     val repository = remember { PlaceRepository(context.applicationContext) }
     val places by repository.places.collectAsStateWithLifecycle()
@@ -171,14 +176,14 @@ fun MappinandoApp(searchProvider: PlaceSearcher? = null, updateManager: AppUpdat
     var detailSnapshot by remember { mutableStateOf<Place?>(null) }
     var editorOpen by rememberSaveable { mutableStateOf(false) }
     var editingId by rememberSaveable { mutableStateOf<String?>(null) }
-    var newLatitude by rememberSaveable { mutableDoubleStateOf(45.4642) }
-    var newLongitude by rememberSaveable { mutableDoubleStateOf(9.19) }
+    var newLatitude by rememberSaveable { mutableDoubleStateOf(42.5) }
+    var newLongitude by rememberSaveable { mutableDoubleStateOf(12.5) }
     var suggestedName by rememberSaveable { mutableStateOf("") }
     var suggestedAddress by rememberSaveable { mutableStateOf("") }
     var suggestedCity by rememberSaveable { mutableStateOf("") }
     var suggestedCategoryName by rememberSaveable { mutableStateOf<String?>(null) }
     var searchPreview by rememberSaveable(stateSaver = SearchResultSaver) { mutableStateOf<SearchResult?>(null) }
-    var searchCenter by remember { mutableStateOf(SearchCenter(45.4642, 9.19)) }
+    var searchCenter by remember { mutableStateOf(SearchCenter(42.5, 12.5)) }
     var searchOpen by rememberSaveable { mutableStateOf(false) }
     var aboutOpen by rememberSaveable { mutableStateOf(false) }
     var updatesOpen by rememberSaveable { mutableStateOf(false) }
@@ -192,6 +197,15 @@ fun MappinandoApp(searchProvider: PlaceSearcher? = null, updateManager: AppUpdat
     val snackbars = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
+    LaunchedEffect(locationState.focus?.token) {
+        locationState.focus?.let { focus = it; searchPreview = null; selectedId = null; searchCenter = SearchCenter(it.latitude, it.longitude) }
+    }
+    LaunchedEffect(locationState.message) {
+        locationState.message?.let { text ->
+            snackbars.showSnackbar(text)
+            onLocationMessageConsumed()
+        }
+    }
     val compactHeight = LocalConfiguration.current.screenHeightDp < 620
     val screenState = rememberSaveableStateHolder()
     // Keep the compact layout identical even while Android hides or restores its bars.
@@ -289,7 +303,7 @@ fun MappinandoApp(searchProvider: PlaceSearcher? = null, updateManager: AppUpdat
         },
         containerColor = Paper,
         contentWindowInsets = stableSystemInsets.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-        snackbarHost = { SnackbarHost(snackbars, Modifier.padding(bottom = dockClearance)) },
+        snackbarHost = {},
     ) { insets ->
         Column(Modifier.fillMaxSize().padding(insets)) {
             if (tab == Tab.MAP) BrandHeader(onAbout = { aboutOpen = true })
@@ -337,7 +351,7 @@ fun MappinandoApp(searchProvider: PlaceSearcher? = null, updateManager: AppUpdat
                             }
                             if (mapPlaces.isEmpty()) {
                                 Text(if (places.isEmpty()) "La tua mappa comincia da un posto. Aggiungilo con +." else "Nessun luogo con questi filtri. Prova un’altra categoria.", fontSize = 12.sp, color = Muted, modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp))
-                            } else LazyRow(contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            } else LazyRow(modifier = Modifier.testTag("next-places"), contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 items(mapPlaces.sortedBy { it.visited }, key = { it.id }) { place ->
                                     CompactPlaceCard(place, onClick = { openPlace(place) }, onFavorite = { safely { repository.toggleFavorite(place.id) } })
                                 }
@@ -383,6 +397,7 @@ fun MappinandoApp(searchProvider: PlaceSearcher? = null, updateManager: AppUpdat
             val anchor = compactMapBounds
             if (anchor != null && mapWindowSize.width > 0 && mapWindowSize.height > 0) {
                 MapScene(
+                    locating = locationState.busy,
                     compactBounds = anchor, windowSize = mapWindowSize, expansion = mapProgress,
                     fullscreen = mapFullscreen, transitioning = mapTransitioning || tab != Tab.MAP,
                     systemPadding = systemPadding, places = mapPlaces, selectedPlaceId = selectedId, focus = focus,
@@ -390,9 +405,12 @@ fun MappinandoApp(searchProvider: PlaceSearcher? = null, updateManager: AppUpdat
                     onMapLongClick = { latitude, longitude -> if (!mapTransitioning && tab == Tab.MAP) addAt(latitude, longitude) },
                     onToggleFullscreen = { if (!mapTransitioning) requestMapPresentation(!mapFullscreen) },
                     onRecenter = {
-                        searchPreview = null
-                        val target = mapPlaces.firstOrNull { it.id == selectedId } ?: mapPlaces.firstOrNull()
-                        focus = MapFocus(target?.latitude ?: 45.4642, target?.longitude ?: 9.19, 12.8)
+                        if (onLocate != null) onLocate()
+                        else {
+                            searchPreview = null
+                            val target = mapPlaces.firstOrNull { it.id == selectedId } ?: mapPlaces.firstOrNull()
+                            focus = MapFocus(target?.latitude ?: 42.5, target?.longitude ?: 12.5, if (target == null) 5.0 else 12.8)
+                        }
                     },
                     onAdd = { searchOpen = true },
                     onSearch = { searchOpen = true },
@@ -431,6 +449,8 @@ fun MappinandoApp(searchProvider: PlaceSearcher? = null, updateManager: AppUpdat
             )
         }
     }
+    SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp)
+        .padding(bottom = if (mapFullscreen) navigationBottom + 18.dp else dockClearance))
     }
 
     if (searchOpen) SearchSheet(
@@ -581,17 +601,19 @@ internal fun PlaceCategory.tint(): Color = when (this) {
 }
 
 @Composable
-private fun CompactPlaceCard(place: Place, onClick: () -> Unit, onFavorite: () -> Unit) {
-    Surface(onClick = onClick, shape = RoundedCornerShape(21.dp), color = Color.White, border = androidx.compose.foundation.BorderStroke(1.dp, Line), modifier = Modifier.width(290.dp)) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+internal fun CompactPlaceCard(place: Place, onClick: () -> Unit, onFavorite: () -> Unit) {
+    Surface(onClick = onClick, shape = RoundedCornerShape(21.dp), color = Color.White, border = androidx.compose.foundation.BorderStroke(1.dp, Line), modifier = Modifier.width(290.dp).testTag("compact-place-${place.id}")) {
+        Row(Modifier.padding(12.dp).heightIn(min = 62.dp), verticalAlignment = Alignment.CenterVertically) {
             CategoryArtwork(place.category, Modifier.size(62.dp).clip(RoundedCornerShape(15.dp)))
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                Text(place.category.label.uppercase(), color = place.category.tint(), fontSize = 9.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Bold)
+                Text(place.category.label.uppercase(), color = place.category.tint(), fontSize = 9.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(place.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                     Box(Modifier.size(5.dp).background(if (place.visited) Forest else Color(0xFFCB9D4B), CircleShape))
-                    Text(if (place.visited) "Già nel cuore" else "Da visitare", fontSize = 10.sp, color = Muted, modifier = Modifier.padding(start = 5.dp))
-                    if (place.tasks.isNotEmpty()) Text(" · ${place.tasks.count { !it.done }} cose da fare", fontSize = 10.sp, color = Muted)
+                    Text(buildString {
+                        append(if (place.visited) "Già nel cuore" else "Da visitare")
+                        if (place.tasks.isNotEmpty()) append(" · ${place.tasks.count { !it.done }} da fare")
+                    }, fontSize = 10.sp, color = Muted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 5.dp))
                 }
             }
             IconButton(onClick = onFavorite, modifier = Modifier.size(48.dp)) {
@@ -644,13 +666,13 @@ private fun AboutSheet(onDismiss: () -> Unit, onUpdates: (() -> Unit)? = null) {
             item {
                 Surface(color = Lime.copy(alpha = .5f), shape = RoundedCornerShape(20.dp)) {
                     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Si comincia con un po’ d’ispirazione", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        Text("Al primo avvio trovi 6 luoghi di esempio a Milano. Puoi modificarli o eliminarli: la mappa diventa subito tua.", fontSize = 13.sp, lineHeight = 21.sp)
+                        Text("Si comincia da te", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("La tua mappa parte vuota. Cerca il tuo primo posto oppure tieni premuto un punto per salvare una tappa.", fontSize = 13.sp, lineHeight = 21.sp)
                     }
                 }
             }
             item { Text("I tuoi dati", fontWeight = FontWeight.Bold, fontSize = 17.sp) }
-            item { Text("I luoghi, le note e le attività sono salvati localmente. Non servono un account o l’accesso alla posizione. Cercando online, Photon riceve il testo, il filtro e il centro approssimativo della mappa. Per le ricerche per nome e indirizzo viene consultato anche il servizio Android, se disponibile. I servizi sono gratuiti e non richiedono chiavi API. Disinstallando l’app si eliminano i dati locali.", color = Muted, fontSize = 13.sp, lineHeight = 22.sp) }
+            item { Text("I luoghi, le note e le attività sono salvati localmente. Non serve un account. La posizione è facoltativa, viene richiesta solo quando la scegli e serve a centrare la mappa: non conserviamo una cronologia. Cercando online, Photon riceve il testo, il filtro e il centro della mappa. Per nomi e indirizzi viene consultato anche il servizio Android, se disponibile. I servizi sono gratuiti e non richiedono chiavi API. Disinstallando l’app si eliminano i dati locali.", color = Muted, fontSize = 13.sp, lineHeight = 22.sp) }
             item { HorizontalDivider(color = Line) }
             item { Text("Mappe di OpenFreeMap · © OpenMapTiles · © OpenStreetMap contributors. Ricerca di attività: Photon, ospitato da komoot. Motore cartografico MapLibre Native.", color = Muted, fontSize = 11.sp, lineHeight = 18.sp) }
             item {
