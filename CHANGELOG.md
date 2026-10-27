@@ -1,5 +1,11 @@
 # Novità
 
+## 1.0.8
+
+- Verifica delle bozze GitHub tramite l’ID della release, anche prima della pubblicazione.
+- Ripresa di un caricamento interrotto senza incrementi duplicati, mantenendo i sorgenti dell’APK invariati.
+- Guide e schermate della prova reale di aggiornamento dall’app.
+
 ## 1.0.7
 
 - Prima distribuzione pubblica su GitHub, con README illustrato e logo.

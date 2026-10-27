@@ -43,6 +43,12 @@ try {
         Assert-ReleaseAssets $release @($asset) ('a' * 64)
         Assert-Fails { Assert-ReleaseAssets $release @($asset) ('b' * 64) }
     }
+    Test-Case 'Ripresa accetta correzioni agli strumenti ma rifiuta modifiche al codice APK' {
+        Assert-ResumeChanges " M scripts/Publish-Release.ps1`n M scripts/GithubPublishing.psm1"
+        Assert-ResumeChanges " M version.properties"
+        Assert-Fails { Assert-ResumeChanges " M app/src/main/AndroidManifest.xml" }
+        Assert-Fails { Assert-ResumeChanges "?? other-file.txt" }
+    }
     Write-Host "$passed test pubblicazione superati. Nessun comando GitHub eseguito."
 } finally {
     # The fixture directory is retained inside .tools for inspection; no external files are changed.

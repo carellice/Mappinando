@@ -49,6 +49,8 @@ Gli argomenti possono essere passati anche al BAT. In console automatizzate impo
 
 La build locale e la pubblicazione sono due passaggi distinti: una build fallita non consuma una versione; un’interruzione di rete dopo una build riuscita conserva la versione e il file locale `.release-pending.json`. Usa **-Resume** per completarla. Non modificare i sorgenti mentre è in corso un rilascio. Lo script non sposta tag preesistenti e non sovrascrive gli allegati di una release già pubblicata.
 
+La ripresa consente anche correzioni locali ai soli tre script di pubblicazione, senza includerle automaticamente nel commit dell’APK. Modifiche al codice dell’app o ad altri file vengono rifiutate: il pacchetto resta associato al commit e al tag da cui è stato generato. Dopo un’eventuale correzione degli strumenti, salva e invia separatamente quelle modifiche. Le bozze GitHub vengono verificate tramite il loro ID, perché l’endpoint per tag può non renderle disponibili prima della pubblicazione.
+
 Se esiste `docs/release-notes/X.Y.Z.md`, viene usato come testo della release; altrimenti viene preparato un testo generico. Le note possono essere specificate esplicitamente con `-NotesFile`.
 
 ## Configurazione e test

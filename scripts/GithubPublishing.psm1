@@ -45,4 +45,14 @@ function Assert-ReleaseAssets {
     }
 }
 
-Export-ModuleMember -Function Read-DistributionConfig, New-AppUpdateManifest, Assert-ReleaseAssets
+function Assert-ResumeChanges {
+    param([string]$Status)
+    $allowed = @('version.properties', 'scripts/Publish-Release.ps1', 'scripts/GithubPublishing.psm1', 'scripts/Test-GithubPublishing.ps1')
+    foreach ($line in ($Status -split "`n" | Where-Object { $_.Trim() })) {
+        if ($line.Length -lt 4 -or $line.Substring(3).Trim() -notin $allowed) {
+            throw 'Ci sono modifiche ai sorgenti o file non previsti. Ripristina la corrispondenza con la build prima di riprendere il rilascio.'
+        }
+    }
+}
+
+Export-ModuleMember -Function Read-DistributionConfig, New-AppUpdateManifest, Assert-ReleaseAssets, Assert-ResumeChanges

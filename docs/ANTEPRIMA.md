@@ -1,8 +1,16 @@
-# Mappinando 1.0.6
+# Mappinando 1.0.7
 
 Schermate reali acquisite su Android 15. Sono mostrati i sei luoghi di esempio a Milano.
 
 [Guarda la transizione corretta della mappa, in apertura e chiusura](mappinando-map-fixed.mp4).
+
+## Aggiornamenti dall’app
+
+Prova reale dalla versione 1.0.6 alla release GitHub 1.0.7: download, verifica della firma, autorizzazione dell’origine e conferma dell’installer Android. Le tappe sono rimaste intatte.
+
+![Aggiornamento verificato e pronto per l’installazione](mappinando-update-ready.png)
+
+![La nuova versione conferma di essere aggiornata](mappinando-update-current.png)
 
 ## Esplora
 

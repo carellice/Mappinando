@@ -56,6 +56,8 @@ Apri le informazioni dal pulsante con la bussola e scegli **Aggiornamenti dell�
 
 L’app controlla anche la disponibilità di nuove release all’avvio, al massimo una volta al giorno. Puoi rimandare l’avviso e tornare a controllare manualmente. Prima dell’installazione vengono verificati integrità SHA-256, identificativo dell’app, versione e firma dell’APK. [Come funziona](docs/AGGIORNAMENTI.md).
 
+<p align="center"><img src="docs/mappinando-update-ready.png" width="290" alt="Aggiornamento scaricato e verificato, pronto per la conferma di installazione Android" /></p>
+
 ## I tuoi dati restano tuoi
 
 Luoghi, note, preferiti e attività vengono salvati **localmente sul dispositivo** e restano consultabili offline. Non servono un account o l’accesso alla posizione. Questa versione non sincronizza i dati: disinstallare l’app elimina la raccolta locale.

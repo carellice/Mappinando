@@ -76,8 +76,7 @@ try {
         $pending = [pscustomobject]@{ repository = $config.Repository; versionName = $current.VersionName; versionCode = $current.VersionCode; baseCommit = $head; releaseCommit = '' }
     }
     if ($status -and $Resume) {
-        $changedPaths = @(Invoke-Checked git @('status', '--porcelain', '--untracked-files=normal') -Capture)
-        if (($changedPaths -join "`n").Trim() -ne 'M version.properties') { throw 'Ci sono modifiche diverse dalla versione. Non verranno aggiunte automaticamente al commit.' }
+        Assert-ResumeChanges $status
     }
     $artifact = 'Mappinando-{0}-debug.apk' -f $current.VersionName
     $apk = Join-Path $project ('releases\' + $artifact)
@@ -102,9 +101,13 @@ try {
     Write-PublishJson $pendingFile $pending
     $dirty = (Invoke-Checked git @('status', '--porcelain', '--untracked-files=normal') -Capture)
     if ($dirty) {
-        if ($dirty.Trim() -ne 'M version.properties') { throw 'I sorgenti sono cambiati durante la compilazione. Il rilascio non viene pubblicato.' }
-        Invoke-Checked git @('add', '--', 'version.properties')
-        Invoke-Checked git @('commit', '-m', ('Release v' + $current.VersionName))
+        if ($Resume) { Assert-ResumeChanges $dirty }
+        elseif ($dirty.Trim() -ne 'M version.properties') { throw 'I sorgenti sono cambiati durante la compilazione. Il rilascio non viene pubblicato.' }
+        $versionDirty = Invoke-Checked git @('status', '--porcelain', '--', 'version.properties') -Capture
+        if ($versionDirty) {
+            Invoke-Checked git @('add', '--', 'version.properties')
+            Invoke-Checked git @('commit', '-m', ('Release v' + $current.VersionName))
+        }
     }
     $releaseCommit = (Invoke-Checked git @('rev-parse', 'HEAD') -Capture).Trim()
     $versionInCommit = Invoke-Checked git @('show', 'HEAD:version.properties') -Capture
@@ -134,20 +137,23 @@ try {
     $previousErrorPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
-        $existingRelease = & gh release view $tag --repo $config.Repository --json isDraft 2>$null
+        $existingRelease = & gh release view $tag --repo $config.Repository --json isDraft,databaseId 2>$null
         $releaseExists = $LASTEXITCODE -eq 0
     } finally { $ErrorActionPreference = $previousErrorPreference }
     if (-not $releaseExists) {
         Invoke-Checked gh @('release', 'create', $tag, '--repo', $config.Repository, '--draft', '--verify-tag', '--title', ('Mappinando ' + $current.VersionName), '--notes-file', $notesPath)
     } elseif (-not (($existingRelease -join "`n" | ConvertFrom-Json).isDraft)) {
-        $published = Invoke-Checked gh @('api', ('repos/' + $config.Repository + '/releases/tags/' + $tag)) -Capture | ConvertFrom-Json
+        $releaseId = (($existingRelease -join "`n") | ConvertFrom-Json).databaseId
+        $published = Invoke-Checked gh @('api', ('repos/' + $config.Repository + '/releases/' + $releaseId)) -Capture | ConvertFrom-Json
         Assert-ReleaseAssets $published $files $manifest.sha256
         [IO.File]::Delete($pendingFile)
         Write-Host ("Release gia completa: " + $published.html_url) -ForegroundColor Green
         exit 0
     }
     Invoke-Checked gh (@('release', 'upload', $tag, '--repo', $config.Repository, '--clobber') + $files)
-    $uploaded = Invoke-Checked gh @('api', ('repos/' + $config.Repository + '/releases/tags/' + $tag)) -Capture | ConvertFrom-Json
+    # Drafts may not resolve through /releases/tags/{tag}; use the release's stable database ID.
+    $releaseId = (Invoke-Checked gh @('release', 'view', $tag, '--repo', $config.Repository, '--json', 'databaseId', '--jq', '.databaseId') -Capture).Trim()
+    $uploaded = Invoke-Checked gh @('api', ('repos/' + $config.Repository + '/releases/' + $releaseId)) -Capture | ConvertFrom-Json
     Assert-ReleaseAssets $uploaded $files $manifest.sha256
     Invoke-Checked gh @('release', 'edit', $tag, '--repo', $config.Repository, '--draft=false', '--latest')
     [IO.File]::Delete($pendingFile)
